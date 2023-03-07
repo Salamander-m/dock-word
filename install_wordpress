@@ -1,0 +1,59 @@
+#!/bin/sh
+sudo apt-get update && apt-get upgrade
+sudo apt-get install curl -y
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.12.2/docker-compose-$(uname -s)-$(uname -m)" -o /home/docker-compose
+sudo chmod +x /home/docker-compose
+sudo mv /home/docker-compose /usr/local/bin/
+cd /
+mkdir wordpress
+touch wordpress/docker-compose.yml
+cat > wordpress/docker-compose.yml << EOF 
+version: '3.8'
+
+services:
+
+  wordpress:
+    image: wordpress
+    restart: always
+    ports:
+      - 8000:80
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: MYSQL_USER
+      WORDPRESS_DB_PASSWORD: password
+      WORDPRESS_DB_NAME: mysql
+    volumes:
+      - wordpress:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    container_name: db
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: mysql
+      MYSQL_USER: MYSQL_USER
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - db:/var/lib/mysql
+    ports:
+      - 9906:3306
+
+  phpmyadmin:
+     image: phpmyadmin/phpmyadmin
+     environment:
+       PMA_HOST: db
+     restart: always
+     ports:
+      - 8090:80
+     depends_on:
+      - db
+
+volumes:
+  wordpress:
+  db:
+EOF
+cd wordpress
+sudo docker-compose up
